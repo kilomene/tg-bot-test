@@ -50,9 +50,9 @@ while true; do
   CHUNKS=$(printf '%s' "$RESP" | sed 's/"update_id":/\n"update_id":/g')
   while IFS= read -r chunk; do
     case "$chunk" in *'"update_id":'*) ;; *) continue ;; esac
-    UID=$(printf '%s' "$chunk" | grep -o '"update_id":[0-9]*' | head -1 | grep -o '[0-9]*')
-    [ -z "$UID" ] && continue
-    OFFSET=$((UID + 1))
+    UPD_ID=$(printf '%s' "$chunk" | grep -o '"update_id":[0-9]*' | head -1 | grep -o '[0-9]*')
+    [ -z "$UPD_ID" ] && continue
+    OFFSET=$((UPD_ID + 1))
     echo "$OFFSET" > offset.txt
     CHAT=$(printf '%s' "$chunk" | grep -o '"chat":{"id":-\{0,1\}[0-9]*' | head -1 | grep -o -- '-\{0,1\}[0-9]*$')
     TEXT=$(printf '%s' "$chunk" | sed -n 's/.*"text":"\([^"]*\)".*/\1/p' | head -1)
@@ -73,7 +73,7 @@ while true; do
         send_msg "$CHAT" "Echo from the phone: $TEXT"
         ;;
     esac
-    echo "$(date) handled update $UID chat $CHAT" >> bot.log
+    echo "$(date) handled update $UPD_ID chat $CHAT" >> bot.log
   done <<EOF
 $CHUNKS
 EOF
