@@ -33,8 +33,9 @@ send_msg() {
 
 unescape() {
   local s="$1"
+  local q='"'
   s=${s//\\n/$'\n'}
-  s=${s//\\"/\"}
+  s=${s//\\$q/$q}
   s=${s//\\\//\/}
   s=${s//\\\\/\\}
   printf '%s' "$s"
