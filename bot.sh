@@ -1,6 +1,15 @@
 #!/usr/bin/env bash
-# AGT Telegram test bot v5: long-polling bot in pure bash + curl.
+# AGT Telegram test bot v6: long-polling bot in pure bash + curl.
 # Runs inside the AGT app on the phone. No python, no node, no jq.
+# v6 fix (2026-11-17, root-caused on the phone against live bytes):
+# the getUpdates response as received contains a literal newline
+# right after each "update_id":NNN, entry. The v5 parser reads the
+# response line by line, so every update was split in two: the line
+# holding the update_id had no chat or text, and the line holding
+# the message had no update_id and was discarded. Every real update
+# was skipped as "no chat id readable". Fix: strip all raw newline
+# bytes from the response before parsing (JSON string values carry
+# newlines only as backslash-n escapes, so this is safe).
 # v5 rules (learned from the v1-v4 failures, 2026-11-16):
 # - Every update is logged with what was read from it (id, chat, text)
 #   and every skip carries its reason. Nothing vanishes silently.
@@ -53,10 +62,10 @@ unescape() {
 }
 
 ME=$(curl -s -m 15 "$API/getMe")
-echo "$(date) bot starting v5, offset $OFFSET, getMe: $ME" | tee -a bot.log
+echo "$(date) bot starting v6, offset $OFFSET, getMe: $ME" | tee -a bot.log
 
 while true; do
-  RESP=$(curl -s -m 60 "$API/getUpdates?offset=$OFFSET&timeout=50")
+  RESP=$(curl -s -m 60 "$API/getUpdates?offset=$OFFSET&timeout=50" | tr -d '\n')
   if [ -z "$RESP" ]; then sleep 2; continue; fi
   case "$RESP" in
     *'"ok":true'*) ;;
